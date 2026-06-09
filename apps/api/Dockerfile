@@ -10,10 +10,10 @@ COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile || pnpm install
 
-# Sources, then compile TypeScript → dist.
+# Sources, then compile TypeScript → dist (shared first — api imports it at runtime).
 COPY packages ./packages
 COPY apps/api ./apps/api
-RUN pnpm --filter @truestake/api build
+RUN pnpm --filter @truestake/shared build && pnpm --filter @truestake/api build
 
 # Produce a pruned deployment with ONLY production node_modules.
 RUN pnpm --filter @truestake/api deploy --prod /out
