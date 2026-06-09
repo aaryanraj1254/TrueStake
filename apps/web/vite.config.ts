@@ -21,5 +21,17 @@ export default defineConfig({
   build: {
     sourcemap: true,
     target: "es2022",
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          motion: ["framer-motion"],
+          charts: ["recharts"],
+          particles: ["@tsparticles/engine", "@tsparticles/react", "@tsparticles/slim"],
+          vendor: ["ethers", "@supabase/supabase-js", "howler", "canvas-confetti"],
+        },
+      },
+    },
   },
 });
