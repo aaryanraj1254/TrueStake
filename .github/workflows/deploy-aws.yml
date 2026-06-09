@@ -54,7 +54,7 @@ jobs:
           docker push "$REGISTRY/$ECR_WEB:latest"
 
       - name: Deploy to EC2 over SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           TAG: ${{ github.sha }}
