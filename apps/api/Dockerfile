@@ -1,5 +1,5 @@
 # ───────────────────────── Stage 1: build ─────────────────────────
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 RUN corepack enable
 
@@ -19,7 +19,7 @@ RUN pnpm --filter @truestake/shared build && pnpm --filter @truestake/api build
 RUN pnpm --filter @truestake/api deploy --prod /out
 
 # ──────────────────────── Stage 2: runtime ────────────────────────
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache wget
