@@ -9,7 +9,7 @@
 
 services:
   api:
-    image: node:20-alpine
+    image: node:22-alpine
     working_dir: /app
     command: sh -c "corepack enable && pnpm install && pnpm --filter @truestake/api dev"
     environment:
@@ -22,7 +22,7 @@ services:
       - "3000:3000"
 
   web:
-    image: node:20-alpine
+    image: node:22-alpine
     working_dir: /app
     command: sh -c "corepack enable && pnpm install && pnpm --filter @truestake/web dev -- --host 0.0.0.0"
     volumes:
