@@ -10,7 +10,7 @@
 # The build runs from the monorepo root and emits apps/web/dist.
 
 [build]
-  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @truestake/web build"
+  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @truestake/shared build && pnpm --filter @truestake/web build"
   publish = "apps/web/dist"
 
 [build.environment]

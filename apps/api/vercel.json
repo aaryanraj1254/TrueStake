@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "pnpm --filter @truestake/api build",
+  "buildCommand": "pnpm --filter @truestake/shared build && pnpm --filter @truestake/api build",
   "installCommand": "corepack enable && pnpm install --frozen-lockfile",
   "functions": {
     "api/index.ts": {

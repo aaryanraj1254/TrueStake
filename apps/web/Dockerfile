@@ -19,7 +19,7 @@ ARG VITE_SUPABASE_ANON_KEY
 ARG VITE_VAPID_PUBLIC_KEY
 ARG VITE_RAZORPAY_KEY_ID
 ENV VITE_API_URL=""
-RUN pnpm --filter @truestake/web build
+RUN pnpm --filter @truestake/shared build && pnpm --filter @truestake/web build
 
 # ──────────────────────── Stage 2: nginx ──────────────────────────
 FROM nginx:alpine AS runtime
