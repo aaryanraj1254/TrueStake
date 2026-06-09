@@ -1,0 +1,97 @@
+# Production stack — runs on EC2 (pulls images from ECR) or locally (builds).
+#
+#   On EC2:   ECR_REGISTRY and IMAGE_TAG are set by CI, then `docker-compose pull && up -d`.
+#   Locally:  `docker-compose build && docker-compose up -d` (image vars fall back to local tags).
+#
+# Hot-reload dev overrides live in docker-compose.override.yml (auto-merged by compose).
+
+services:
+  api:
+    image: ${ECR_REGISTRY:-truestake}/truestake-api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      mongo:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - truestake-network
+
+  web:
+    image: ${ECR_REGISTRY:-truestake}/truestake-web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+        VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY:-}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - truestake-network
+
+  # Optional legacy store — TrueStake runs on Supabase (hosted Postgres),
+  # so this is not required by the app. Kept for parity / future use.
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - truestake-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - truestake-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - truestake-network
+
+volumes:
+  mongo-data:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  truestake-network:
+    driver: bridge

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truestake-api
+  labels:
+    app: truestake-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: truestake-api
+  template:
+    metadata:
+      labels:
+        app: truestake-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/truestake/api:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: truestake-api-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20

@@ -1,0 +1,86 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_WEB: truestake-web
+  ECR_API: truestake-api
+
+jobs:
+  build-and-deploy:
+    name: Build, push to ECR, deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push API image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        run: |
+          docker build -f apps/api/Dockerfile -t "$REGISTRY/$ECR_API:$TAG" -t "$REGISTRY/$ECR_API:latest" .
+          docker push "$REGISTRY/$ECR_API:$TAG"
+          docker push "$REGISTRY/$ECR_API:latest"
+
+      - name: Build & push Web image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        run: |
+          docker build -f apps/web/Dockerfile \
+            --build-arg VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+            --build-arg VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            --build-arg VITE_VAPID_PUBLIC_KEY="${{ secrets.VITE_VAPID_PUBLIC_KEY }}" \
+            --build-arg VITE_RAZORPAY_KEY_ID="${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
+            -t "$REGISTRY/$ECR_WEB:$TAG" -t "$REGISTRY/$ECR_WEB:latest" .
+          docker push "$REGISTRY/$ECR_WEB:$TAG"
+          docker push "$REGISTRY/$ECR_WEB:latest"
+
+      - name: Deploy to EC2 over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: REGISTRY,TAG,AWS_REGION
+          script: |
+            set -e
+            aws ecr get-login-password --region "$AWS_REGION" \
+              | docker login --username AWS --password-stdin "$REGISTRY"
+            cd /home/ec2-user/truestake
+            export ECR_REGISTRY="$REGISTRY"
+            export IMAGE_TAG="$TAG"
+            docker-compose -f docker-compose.yml pull api web
+            docker-compose -f docker-compose.yml up -d --force-recreate api web prometheus grafana
+            docker image prune -f
+
+      - name: Health check
+        run: |
+          echo "Waiting for app to come up..."
+          for i in $(seq 1 12); do
+            if curl -fsS "http://${{ secrets.EC2_HOST }}/health" > /dev/null; then
+              echo "✅ Deploy healthy"; exit 0
+            fi
+            echo "...attempt $i, retrying in 5s"; sleep 5
+          done
+          echo "❌ Health check failed"; exit 1

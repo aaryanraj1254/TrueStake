@@ -1,0 +1,33 @@
+# Local development overrides — auto-merged by `docker-compose` on top of
+# docker-compose.yml. Mounts source for hot reload and runs the dev servers.
+#
+# Note: TrueStake uses `tsx watch` (the project's dev runner) rather than
+# ts-node-dev — same purpose (TS hot reload), faster. The web dev server is Vite.
+#
+#   Start dev stack:  docker-compose up        (merges this file automatically)
+#   Start prod stack: docker-compose -f docker-compose.yml up -d
+
+services:
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && pnpm install && pnpm --filter @truestake/api dev"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    ports:
+      - "3000:3000"
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && pnpm install && pnpm --filter @truestake/web dev -- --host 0.0.0.0"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    ports:
+      - "5173:5173"
