@@ -1,0 +1,32 @@
+# Netlify — frontend (apps/web) deploy config.
+#
+# In the Netlify UI, set these environment variables (Site settings → Env):
+#   VITE_API_URL            = https://<your-backend>.vercel.app   (the Vercel API URL)
+#   VITE_SUPABASE_URL       = https://uifcarerkllnimiomxyy.supabase.co
+#   VITE_SUPABASE_ANON_KEY  = <your anon key>
+#   VITE_VAPID_PUBLIC_KEY   = <your vapid public key>
+#   VITE_RAZORPAY_KEY_ID    = rzp_test_xxx
+#
+# The build runs from the monorepo root and emits apps/web/dist.
+
+[build]
+  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @truestake/web build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "9"
+
+# SPA fallback — all client routes resolve to index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

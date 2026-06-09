@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-dark-900 text-gray-100 font-body antialiased;
+    background-image: radial-gradient(circle at 50% -10%, #111118 0%, #050508 65%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Light mode overrides (default is dark). */
+  html:not(.dark) body {
+    @apply bg-gray-100 text-gray-900;
+    background-image: radial-gradient(circle at 50% -10%, #ffffff 0%, #e8e8ee 70%);
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-heading tracking-wide;
+  }
+
+  /* Gold scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0a0f;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #F0B429, #CB6E17);
+    border-radius: 6px;
+    border: 2px solid #0a0a0f;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #F7C948;
+  }
+  * {
+    scrollbar-color: #F0B429 #0a0a0f;
+    scrollbar-width: thin;
+  }
+
+  ::selection {
+    background: rgba(240, 180, 41, 0.3);
+    color: #fff;
+  }
+}
+
+@layer components {
+  /* Glassmorphism dark card */
+  .glass {
+    @apply relative overflow-hidden rounded-2xl border border-white/5 bg-dark-700/60 backdrop-blur-xl;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .glass-gold {
+    @apply glass border-gold/20;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(240, 180, 41, 0.1) inset;
+  }
+
+  /* Gold shimmer sweep — place over a card; pointer-events none */
+  .shimmer::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0;
+    background: linear-gradient(
+      120deg,
+      transparent 30%,
+      rgba(240, 180, 41, 0.18) 50%,
+      transparent 70%
+    );
+    transform: translateX(-150%);
+    animation: shimmer 3s infinite;
+  }
+
+  .text-gold-gradient {
+    @apply bg-gold-gradient bg-clip-text text-transparent;
+  }
+
+  .btn-gold {
+    @apply rounded-lg bg-gold-gradient px-5 py-2.5 font-semibold text-dark-900 shadow-gold transition
+           hover:shadow-gold-lg hover:brightness-110 active:scale-95 disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply rounded-lg border border-white/10 bg-white/5 px-5 py-2.5 font-semibold text-gray-200
+           transition hover:border-gold/40 hover:text-gold active:scale-95;
+  }
+
+  .input-dark {
+    @apply w-full rounded-lg border border-white/10 bg-dark-800/80 px-4 py-3 text-gray-100
+           placeholder-gray-500 outline-none transition focus:border-gold/60 focus:shadow-gold;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold;
+  }
+}
+
+@layer utilities {
+  /* CRT scanline overlay — apply to a fixed full-screen element */
+  .scanlines::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.025) 0px,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
+
+  .glow-up {
+    box-shadow: 0 0 18px rgba(34, 197, 94, 0.45);
+  }
+  .glow-down {
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
+  }
+}

@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/.vite
+**/.turbo
+**/.env
+**/.env.*
+.git
+.github
+*.log
+**/coverage
