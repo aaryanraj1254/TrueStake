@@ -16,7 +16,7 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @truestake/shared build && pnpm --filter @truestake/api build
 
 # Produce a pruned deployment with ONLY production node_modules.
-RUN pnpm --filter @truestake/api deploy --prod /out
+RUN pnpm --filter @truestake/api deploy --prod --legacy /out
 
 # ──────────────────────── Stage 2: runtime ────────────────────────
 FROM node:22-alpine AS runtime
