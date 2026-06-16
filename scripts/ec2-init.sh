@@ -27,14 +27,34 @@ if ! command -v aws >/dev/null 2>&1; then
   (cd /tmp && unzip -q awscliv2.zip && sudo ./aws/install)
 fi
 
-echo "▶ Preparing app directory..."
-mkdir -p /home/ec2-user/truestake
-cd /home/ec2-user/truestake
+echo "▶ Configuring 2G swap (the full stack OOMs on small instances like t2.micro)..."
+if [ ! -f /swapfile ]; then
+  sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+else
+  echo "  /swapfile already present"
+fi
 
-# The CI deploy step uploads docker-compose.yml + prometheus.yml here, or you can
-# clone the repo. The app's secrets live in apps/api/.env — create it on the box:
+echo "▶ Fetching app repo (provides docker-compose.yml + prometheus.yml + scripts)..."
+# The CI deploy step does `cd /home/ec2-user/truestake && docker-compose ... up`, so
+# the compose files MUST live there. Clone the repo (or fast-forward if already present).
+REPO_URL="${TRUESTAKE_REPO:-https://github.com/aaryanraj1254/TrueStake.git}"
+APP_DIR="/home/ec2-user/truestake"
+if [ -d "$APP_DIR/.git" ]; then
+  git -C "$APP_DIR" pull --ff-only || echo "  (pull skipped — local changes)"
+else
+  git clone "$REPO_URL" "$APP_DIR"
+fi
+cd "$APP_DIR"
+
+# App secrets live in apps/api/.env (read via compose `env_file`). Seed from the
+# example so the stack starts; edit it with real keys for live data.
 if [ ! -f apps/api/.env ]; then
-  echo "⚠  Create apps/api/.env on this host before first deploy (Supabase/Razorpay/etc keys)."
+  cp apps/api/.env.example apps/api/.env 2>/dev/null || true
+  echo "⚠  Edit $APP_DIR/apps/api/.env with real keys before first deploy (Supabase/Razorpay/etc)."
 fi
 
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo '<ACCOUNT_ID>')"

@@ -19,9 +19,6 @@ services:
       - apps/api/.env
     environment:
       NODE_ENV: production
-    depends_on:
-      mongo:
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 30s
@@ -50,10 +47,13 @@ services:
     networks:
       - truestake-network
 
-  # Optional legacy store — TrueStake runs on Supabase (hosted Postgres),
-  # so this is not required by the app. Kept for parity / future use.
+  # Optional legacy store — TrueStake runs on Supabase (hosted Postgres), so this
+  # is NOT required by the app. Gated behind a profile so it stays off by default
+  # (saves ~150 MB RAM on small instances). Start it explicitly if ever needed:
+  #   docker-compose --profile optional up -d mongo
   mongo:
     image: mongo:7
+    profiles: ["optional"]
     volumes:
       - mongo-data:/data/db
     restart: unless-stopped

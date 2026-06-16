@@ -49,11 +49,12 @@ Requires `apps/api/.env` to exist (read via `env_file`).
 aws configure                    # access key, secret, region=ap-south-1
 bash scripts/aws-setup.sh        # creates ECR repos + truestake-sg (22/80/443/3000)
 
-# --- launch EC2 t2.micro (Amazon Linux 2), attach truestake-sg, then ---
-ssh -i key.pem ec2-user@<EC2_IP>
-bash ec2-init.sh                 # docker + compose + aws cli + ECR login
-# create apps/api/.env on the box, and copy docker-compose.yml + prometheus.yml to
-# /home/ec2-user/truestake/
+# --- launch EC2 (t3.small recommended; t2.micro free-tier but tight on RAM),
+#     Amazon Linux 2, attach truestake-sg, then bootstrap it in one shot: ---
+ssh -i key.pem ec2-user@<EC2_IP> 'bash -s' < scripts/ec2-init.sh
+# ^ installs docker + compose + aws cli, adds 2G swap, ECR login, clones the repo to
+#   /home/ec2-user/truestake, and seeds apps/api/.env. Now fill that .env with real keys:
+ssh -i key.pem ec2-user@<EC2_IP> 'nano truestake/apps/api/.env'
 ```
 
 **GitHub Secrets** (repo → Settings → Secrets and variables → Actions):
