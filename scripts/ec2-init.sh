@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# TrueStake — EC2 bootstrap. Run ONCE on a fresh Amazon Linux 2 instance.
+# TrueStake — EC2 bootstrap. Run ONCE on a fresh Amazon Linux 2023 (or 2) instance.
 #   ssh -i key.pem ec2-user@<EC2_IP> 'bash -s' < scripts/ec2-init.sh
 # or copy it over and run it on the box.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -9,10 +9,11 @@ set -euo pipefail
 REGION="${AWS_REGION:-ap-south-1}"
 
 echo "▶ Installing docker + git..."
+# `yum` is aliased to dnf on Amazon Linux 2023, so this works on AL2 and AL2023.
 sudo yum update -y
-sudo yum install -y docker git
-sudo service docker start
-sudo systemctl enable docker
+sudo yum install -y docker git unzip
+# systemctl works on both AL2 and AL2023 (AL2023 has no legacy `service` command).
+sudo systemctl enable --now docker
 sudo usermod -aG docker ec2-user
 
 echo "▶ Installing docker-compose..."
