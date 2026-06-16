@@ -53,6 +53,12 @@ jobs:
           docker push "$REGISTRY/$ECR_WEB:$TAG"
           docker push "$REGISTRY/$ECR_WEB:latest"
 
+      # Fetch the ECR login token on the runner (which already has AWS creds via
+      # the secrets) and pass it to the box. This way the EC2 host needs NO AWS
+      # credentials or IAM role of its own — it just receives a short-lived token.
+      - name: Get ECR login token
+        run: echo "ECR_PASSWORD=$(aws ecr get-login-password --region "$AWS_REGION")" >> "$GITHUB_ENV"
+
       - name: Deploy to EC2 over SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -62,11 +68,10 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: REGISTRY,TAG,AWS_REGION
+          envs: REGISTRY,TAG,ECR_PASSWORD
           script: |
             set -e
-            aws ecr get-login-password --region "$AWS_REGION" \
-              | docker login --username AWS --password-stdin "$REGISTRY"
+            echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin "$REGISTRY"
             cd /home/ec2-user/truestake
             export ECR_REGISTRY="$REGISTRY"
             export IMAGE_TAG="$TAG"
